@@ -9,6 +9,10 @@
 
 > An AI-powered Python scripting assistant for Unreal Engine 5.5 — type what you want in plain English, get it done inside the editor.
 
+<p align="center">
+  <img src="docs/panel-preview.png" alt="UE5 Agent Python panel" width="520">
+</p>
+
 UE5 Agent Python is a UE 5.5 editor plugin that turns natural-language prompts into live Python executed against the editor. It reads your current selection (viewport + content browser) as context, sends the prompt to your chosen AI provider, and runs the returned code through `IPythonScriptPlugin`. Designed as a **power tool for senior UE devs** — batch and bulk operations, not gameplay logic.
 
 ## ✨ Features
