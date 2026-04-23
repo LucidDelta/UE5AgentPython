@@ -1,0 +1,31 @@
+# Build artifacts
+Binaries/
+Intermediate/
+Saved/
+DerivedDataCache/
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.vcxproj*
+*.sln
+*.user
+*.suo
+*.sdf
+*.opensdf
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Unreal
+*.uasset.bak
+*.umap.bak
+
+# Secrets & local config (never commit)
+*.env
+.env*
+secrets.ini
+**/api_keys.txt
