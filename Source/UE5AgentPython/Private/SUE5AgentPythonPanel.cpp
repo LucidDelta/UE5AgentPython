@@ -973,6 +973,21 @@ FString SUE5AgentPythonPanel::BuildSystemPrompt() const
 		"      unreal.EditorStaticMeshLibrary.remove_collisions(mesh)\n"
 		"      mesh.modify()\n"
 		"      unreal.EditorAssetLibrary.save_asset(mesh.get_path_name())\n"
+		"- unreal.AssetData.object_path was REMOVED in UE 5.1+. Do NOT access asset_data.object_path. "
+		"To load the asset from an AssetData, use:\n"
+		"      asset = asset_data.get_asset()\n"
+		"  Or build the path explicitly:\n"
+		"      path = '{}.{}'.format(asset_data.package_name, asset_data.asset_name)\n"
+		"      asset = unreal.EditorAssetLibrary.load_asset(path)\n"
+		"  Equivalent modern alternatives include asset_data.get_soft_object_path() which returns an\n"
+		"  FSoftObjectPath you can str() into a load-able path. Never reference .object_path.\n"
+		"- To add a simple primitive collision, use unreal.ScriptingCollisionShapeType, NOT\n"
+		"  unreal.ScriptingShapeType. Example:\n"
+		"      unreal.EditorStaticMeshLibrary.add_simple_collisions(mesh, unreal.ScriptingCollisionShapeType.BOX)\n"
+		"  Valid values: BOX, SPHERE, CAPSULE, NDOP10_X, NDOP10_Y, NDOP10_Z, NDOP18, NDOP26.\n"
+		"- unreal.ARFilter uses the modern parameter names: package_paths, recursive_paths,\n"
+		"  class_names. For UE 5.5 prefer class_paths (list of unreal.TopLevelAssetPath) when\n"
+		"  class_names is deprecated for your use case; class_names still works for common cases.\n"
 	);
 }
 
