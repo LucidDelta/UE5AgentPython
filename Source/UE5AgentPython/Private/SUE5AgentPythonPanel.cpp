@@ -251,13 +251,40 @@ void SUE5AgentPythonPanel::Construct(const FArguments& InArgs)
 					.BorderImage(FAppStyle::GetBrush("ToolPanel.DarkGroupBorder"))
 					.Padding(FMargin(4.f))
 					[
-						SAssignNew(LogScroll, SScrollBox)
-						+ SScrollBox::Slot()
+						SNew(SVerticalBox)
+
+						// Toolbar row with right-aligned Clear button
+						+ SVerticalBox::Slot()
+						.AutoHeight()
+						.Padding(0, 0, 0, 4)
 						[
-							SAssignNew(LogText, SMultiLineEditableText)
-							.IsReadOnly(true)
-							.AutoWrapText(true)
-							.Text(LOCTEXT("LogEmpty", "(no log entries yet)"))
+							SNew(SHorizontalBox)
+							+ SHorizontalBox::Slot()
+							.FillWidth(1.f)
+							[
+								SNew(SSpacer)
+							]
+							+ SHorizontalBox::Slot()
+							.AutoWidth()
+							[
+								SNew(SButton)
+								.Text(LOCTEXT("ClearLog", "Clear"))
+								.ToolTipText(LOCTEXT("ClearLogTip", "Clear the session log"))
+								.OnClicked(this, &SUE5AgentPythonPanel::OnClearLogClicked)
+							]
+						]
+
+						+ SVerticalBox::Slot()
+						.FillHeight(1.f)
+						[
+							SAssignNew(LogScroll, SScrollBox)
+							+ SScrollBox::Slot()
+							[
+								SAssignNew(LogText, SMultiLineEditableText)
+								.IsReadOnly(true)
+								.AutoWrapText(true)
+								.Text(LOCTEXT("LogEmpty", "(no log entries yet)"))
+							]
 						]
 					]
 				]
@@ -330,6 +357,22 @@ FReply SUE5AgentPythonPanel::OnLogClicked()
 	{
 		RefreshLogDisplay();
 	}
+	return FReply::Handled();
+}
+
+FReply SUE5AgentPythonPanel::OnClearLogClicked()
+{
+	EnsureSavedDirExists();
+	const FString SessionLogPath = GetSavedDir() / TEXT("session.log");
+
+	// Overwrite with empty content. Any failure is silent — RefreshLogDisplay will
+	// surface either the (now empty) file or the "(session.log not found)" marker.
+	FFileHelper::SaveStringToFile(
+		FString(),
+		*SessionLogPath,
+		FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
+
+	RefreshLogDisplay();
 	return FReply::Handled();
 }
 
@@ -988,6 +1031,32 @@ FString SUE5AgentPythonPanel::BuildSystemPrompt() const
 		"- unreal.ARFilter uses the modern parameter names: package_paths, recursive_paths,\n"
 		"  class_names. For UE 5.5 prefer class_paths (list of unreal.TopLevelAssetPath) when\n"
 		"  class_names is deprecated for your use case; class_names still works for common cases.\n"
+		"\n"
+		"REFERENCE-GRAPH SEMANTICS:\n"
+		"- Phrases like \"used by X\", \"referenced by X\", \"depending on X\", \"dependencies of X\", "
+		"or \"assets that X references\" are ALWAYS dependency-graph queries. Resolve them through\n"
+		"  asset registry dependency APIs, NOT through folder-location filters. The set of assets\n"
+		"  that satisfies them can live ANYWHERE in /Game — do NOT constrain the result to the\n"
+		"  folder that X lives in.\n"
+		"- Use unreal.AssetRegistryHelpers.get_asset_registry() plus get_dependencies(package_name,\n"
+		"  unreal.AssetRegistryDependencyOptions(...)) to walk outgoing references (\"what X uses\"),\n"
+		"  and get_referencers(...) for incoming references (\"what uses X\").\n"
+		"- Typical pattern for \"move all material instances used by the static meshes in FOLDER_A\n"
+		"  to FOLDER_B\":\n"
+		"      1. Find all StaticMesh assets under FOLDER_A (recursive).\n"
+		"      2. For each mesh, collect its dependency package names via get_dependencies.\n"
+		"      3. Load each dependency; keep those whose class is MaterialInstanceConstant or\n"
+		"         MaterialInstanceDynamic (or a MaterialInstance subclass). Their current folder\n"
+		"         is IRRELEVANT — they may live outside FOLDER_A and must still be moved.\n"
+		"      4. De-duplicate, then rename_asset(old_path, FOLDER_B + '/' + asset_name) for each.\n"
+		"      5. After moves, run unreal.EditorAssetLibrary.fixup_referencers() on the moved\n"
+		"         package paths to repair redirectors.\n"
+		"- NEVER add a filter like \"only if the material instance's current path starts with\n"
+		"  FOLDER_A\" to a \"used by\" query. That collapses the reference-graph meaning into a\n"
+		"  location-coincidence filter and produces the wrong result set — typically zero assets\n"
+		"  moved when the user expected many.\n"
+		"- The same principle applies to textures used by materials, materials used by meshes,\n"
+		"  skeletons used by animations, physics assets used by skeletal meshes, etc.\n"
 	);
 }
 

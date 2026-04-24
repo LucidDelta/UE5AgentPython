@@ -34,6 +34,7 @@ private:
 	FReply OnExecuteClicked();
 	FReply OnGearClicked();
 	FReply OnLogClicked();
+	FReply OnClearLogClicked();
 
 	TSharedRef<SWidget> GenerateProviderComboItem(TSharedPtr<FString> InItem);
 	TSharedRef<SWidget> GenerateModelComboItem(TSharedPtr<FString> InItem);
